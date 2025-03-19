@@ -21,9 +21,41 @@ const themeIcon = document.getElementById('theme-icon');
 // Current selected emoji/mood
 let selectedMood = null;
 let currentDate = new Date();
+let timer = null;
 
 // Initialize by selecting the first view button (Day view)
 viewButtons[0].classList.add('active');
+
+// Helper function to format date as "YYYY-MM-DD"
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Helper function to format date for display
+function formatDateForDisplay(dateStr) {
+    const date = new Date(dateStr);
+    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString(undefined, options);
+}
+
+// Helper function to get emoji for a mood
+function getMoodEmoji(mood) {
+    const emojiMap = {
+        'Happy': '😊',
+        'Excited': '😄',
+        'Content': '😌',
+        'Neutral': '😐',
+        'Tired': '😪',
+        'Anxious': '😰',
+        'Sad': '😢',
+        'Angry': '😠'
+    };
+
+    return emojiMap[mood] || '❓';
+}
 
 // Theme handling
 function initTheme() {
@@ -89,9 +121,10 @@ emojiSelector.addEventListener('click', (e) => {
 function logMood() {
     if (!selectedMood) {
         logStatus.textContent = 'Please select a mood first!';
-        setTimeout(() => { logStatus.textContent = ''; }, 2000);
+        setTimeout(() => { logStatus.textContent = ''; }, 3000);
         return;
     }
+    if(timer) clearTimeout(timer);
 
     const date = new Date();
     const formattedDate = formatDate(date);
@@ -131,7 +164,7 @@ function logMood() {
     moodNote.value = '';
 
     // Reset the selection after a delay
-    setTimeout(() => {
+    timer = setTimeout(() => {
         logStatus.textContent = '';
         document.querySelectorAll('.emoji-selector span').forEach(span => {
             span.classList.remove('selected');
@@ -141,21 +174,6 @@ function logMood() {
 
     // Refresh all views
     loadViews();
-}
-
-// Helper function to format date as "YYYY-MM-DD"
-function formatDate(date) {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-// Helper function to format date for display
-function formatDateForDisplay(dateStr) {
-    const date = new Date(dateStr);
-    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-    return date.toLocaleDateString(undefined, options);
 }
 
 // View switcher
@@ -479,22 +497,6 @@ function loadMoodStats() {
     moodStats.appendChild(totalStat);
 }
 
-// Helper function to get emoji for a mood
-function getMoodEmoji(mood) {
-    const emojiMap = {
-        'happy': '😊',
-        'excited': '😄',
-        'content': '😌',
-        'neutral': '😐',
-        'tired': '😪',
-        'anxious': '😰',
-        'sad': '😢',
-        'angry': '😠'
-    };
-
-    return emojiMap[mood] || '❓';
-}
-
 // Helper function to get week data
 function getWeekData(moods) {
     const weekData = {};
@@ -554,3 +556,45 @@ initTheme();
 
 // Initial load
 loadViews();
+
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('moodChart').getContext('2d');
+  const moodChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Happy', 'Excited', 'Content', 'Neutral', 'Tired', 'Anxious', 'Sad', 'Angry'],
+      datasets: [{
+        label: 'Mood Frequency',
+        data: [12, 19, 3, 5, 2, 3, 7, 8], // Example data
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.2)',
+          'rgba(54, 162, 235, 0.2)',
+          'rgba(255, 206, 86, 0.2)',
+          'rgba(75, 192, 192, 0.2)',
+          'rgba(153, 102, 255, 0.2)',
+          'rgba(255, 159, 64, 0.2)',
+          'rgba(255, 99, 132, 0.2)',
+          'rgba(201, 203, 207, 0.2)'
+        ],
+        borderColor: [
+          'rgba(75, 192, 192, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(201, 203, 207, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+});

@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoodGarden</title>
+    <title>MoodTracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -22,26 +23,28 @@
         <div class="app-content">
             <div class="left-panel">
                 <div class="mood-input-section">
-                    <h2>How are you feeling today?</h2>
+                    <h2>How are you feeling today ?</h2>
                     <div class="emoji-selector">
-                        <span data-mood="happy" title="Happy">😊</span>
-                        <span data-mood="excited" title="Excited">😄</span>
-                        <span data-mood="content" title="Content">😌</span>
-                        <span data-mood="neutral" title="Neutral">😐</span>
-                        <span data-mood="tired" title="Tired">😪</span>
-                        <span data-mood="anxious" title="Anxious">😰</span>
-                        <span data-mood="sad" title="Sad">😢</span>
-                        <span data-mood="angry" title="Angry">😠</span>
+                        <span data-mood="Happy">😊</span>
+                        <span data-mood="Excited">😄</span>
+                        <span data-mood="Content">😌</span>
+                        <span data-mood="Neutral">😐</span>
+                        <span data-mood="Tired">😪</span>
+                        <span data-mood="Anxious">😰</span>
+                        <span data-mood="Sad">😢</span>
+                        <span data-mood="Angry">😠</span>
                     </div>
                     <div class="note-input">
                         <textarea id="mood-note" placeholder="Add a note about why you feel this way (optional)"></textarea>
                     </div>
                     <div id="log-status"></div>
                 </div>
-                
+            </div>
+
+            <div class="left-bottom-panel">
                 <div class="stats-section">
                     <h2>Mood Statistics</h2>
-                    <div id="mood-stats"></div>
+                    <canvas id="moodChart"></canvas>
                 </div>
             </div>
             
