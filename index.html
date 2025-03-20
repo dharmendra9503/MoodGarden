@@ -19,53 +19,54 @@
             </button>
             <h1 class="header-title">MoodGarden</h1>
         </div>
-        
+
         <div class="app-content">
             <div class="left-panel">
-                <div class="mood-input-section">
-                    <h2>How are you feeling today ?</h2>
-                    <div class="emoji-selector">
-                        <span data-mood="Happy">😊</span>
-                        <span data-mood="Excited">😄</span>
-                        <span data-mood="Content">😌</span>
-                        <span data-mood="Neutral">😐</span>
-                        <span data-mood="Tired">😪</span>
-                        <span data-mood="Anxious">😰</span>
-                        <span data-mood="Sad">😢</span>
-                        <span data-mood="Angry">😠</span>
+                <div class="top-panel">
+                    <div class="mood-input-section">
+                        <h2>How are you feeling today ?</h2>
+                        <div class="emoji-selector">
+                            <span data-mood="Happy">😊</span>
+                            <span data-mood="Excited">😄</span>
+                            <span data-mood="Content">😌</span>
+                            <span data-mood="Neutral">😐</span>
+                            <span data-mood="Tired">😪</span>
+                            <span data-mood="Anxious">😰</span>
+                            <span data-mood="Sad">😢</span>
+                            <span data-mood="Angry">😠</span>
+                        </div>
+                        <div class="note-input">
+                            <textarea id="mood-note"
+                                placeholder="Add a note about why you feel this way (optional)"></textarea>
+                        </div>
+                        <div id="log-status"></div>
                     </div>
-                    <div class="note-input">
-                        <textarea id="mood-note" placeholder="Add a note about why you feel this way (optional)"></textarea>
-                    </div>
-                    <div id="log-status"></div>
+                </div>
+                <div class="bottom-panel">
+                    <h2>Mood Statistics</h2>
+                    <canvas id="moodChart" height="130"></canvas>
                 </div>
             </div>
 
-            <div class="left-bottom-panel">
-                <div class="stats-section">
-                    <h2>Mood Statistics</h2>
-                    <canvas id="moodChart"></canvas>
-                </div>
-            </div>
-            
+
             <div class="right-panel">
                 <div class="visualization-section">
-                    <h2>Your Mood Timeline:</h2>
-                    
+                    <h2>Your Mood Timeline</h2>
+
                     <div class="view-controls">
                         <button class="view-btn active" data-view="day">Day</button>
                         <button class="view-btn" data-view="week">Week</button>
                         <button class="view-btn" data-view="month">Month</button>
                         <button class="view-btn" data-view="calendar">Calendar</button>
                     </div>
-                    
+
                     <div id="timeline" class="view-content active"></div>
                     <div id="week-view" class="view-content"></div>
                     <div id="month-view" class="view-content"></div>
                     <div id="calendar-view" class="view-content">
                         <div class="calendar-header">
                             <button id="prev-month">&lt;</button>
-                            <h3 id="current-month-display">August 2023</h3>
+                            <h3 id="current-month-display"></h3>
                             <button id="next-month">&gt;</button>
                         </div>
                         <div class="calendar-grid">

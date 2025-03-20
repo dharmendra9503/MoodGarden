@@ -57,6 +57,57 @@ function getMoodEmoji(mood) {
     return emojiMap[mood] || '❓';
 }
 
+// Helper function to get week data
+function getWeekData(moods) {
+    const weekData = {};
+
+    moods.forEach(log => {
+        const date = new Date(log.date);
+        // Get the first day of the week (Sunday)
+        const firstDayOfWeek = new Date(date);
+        firstDayOfWeek.setDate(date.getDate() - date.getDay());
+
+        const weekKey = formatDate(firstDayOfWeek);
+
+        if (!weekData[weekKey]) {
+            weekData[weekKey] = [];
+        }
+
+        weekData[weekKey].push(log);
+    });
+
+    return weekData;
+}
+
+// Helper function to get month data
+function getMonthData(moods) {
+    const monthData = {};
+
+    moods.forEach(log => {
+        const date = new Date(log.date);
+        const monthYear = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+
+        if (!monthData[monthYear]) {
+            monthData[monthYear] = [];
+        }
+
+        monthData[monthYear].push(log);
+    });
+
+    return monthData;
+}
+
+// Helper function to count moods
+function getMoodCounts(logs) {
+    const counts = {};
+
+    logs.forEach(log => {
+        counts[log.mood] = (counts[log.mood] || 0) + 1;
+    });
+
+    return counts;
+}
+
 // Theme handling
 function initTheme() {
     // Check for saved theme preference or use the system preference
@@ -124,7 +175,7 @@ function logMood() {
         setTimeout(() => { logStatus.textContent = ''; }, 3000);
         return;
     }
-    if(timer) clearTimeout(timer);
+    if (timer) clearTimeout(timer);
 
     const date = new Date();
     const formattedDate = formatDate(date);
@@ -174,6 +225,14 @@ function logMood() {
 
     // Refresh all views
     loadViews();
+    
+    // Destroy existing chart if it exists
+    if (window.moodChart) {
+        window.moodChart.destroy();
+    }
+    
+    // Render new chart
+    renderChart();
 }
 
 // View switcher
@@ -196,15 +255,6 @@ viewButtons.forEach(btn => {
         }
     });
 });
-
-// Load all views
-function loadViews() {
-    loadTimeline();
-    loadWeekView();
-    loadMonthView();
-    renderCalendar(currentDate);
-    loadMoodStats();
-}
 
 // Day View (Timeline)
 function loadTimeline() {
@@ -329,11 +379,8 @@ function loadMonthView() {
     const monthData = getMonthData(moods);
 
     // Sort months chronologically (newest first)
-    const sortedMonths = Object.keys(monthData).sort((a, b) => {
-        const dateA = new Date(a);
-        const dateB = new Date(b);
-        return dateB - dateA;
-    });
+    const sortedMonths = Object.keys(monthData).sort((a, b) => new Date(b) - new Date(a));
+
 
     // Render each month
     sortedMonths.forEach(monthKey => {
@@ -431,9 +478,6 @@ function renderCalendar(date) {
             moodEmoji.textContent = dayMood.emoji;
             calendarDay.appendChild(moodEmoji);
 
-            // Add tooltip functionality
-            calendarDay.title = `${dayMood.mood}${dayMood.note ? ': ' + dayMood.note : ''}`;
-
             // Add click event to show mood details
             calendarDay.addEventListener('click', () => {
                 alert(`Date: ${formatDateForDisplay(dateStr)}\nMood: ${dayMood.mood} ${dayMood.emoji}\n${dayMood.note ? 'Note: ' + dayMood.note : ''}`);
@@ -443,6 +487,94 @@ function renderCalendar(date) {
         calendarGrid.appendChild(calendarDay);
     }
 }
+
+function renderChart() {
+    const ctx = document.getElementById('moodChart').getContext('2d');
+    const moods = JSON.parse(localStorage.getItem('moods')) || [];
+
+    // Define colors for each mood
+    const moodColors = {
+        'Happy': { border: 'rgba(75, 192, 192, 1)', background: 'rgba(75, 192, 192, 0.2)' },
+        'Excited': { border: 'rgba(54, 162, 235, 1)', background: 'rgba(54, 162, 235, 0.2)' },
+        'Content': { border: 'rgba(255, 206, 86, 1)', background: 'rgba(255, 206, 86, 0.2)' },
+        'Neutral': { border: 'rgba(153, 102, 255, 1)', background: 'rgba(153, 102, 255, 0.2)' },
+        'Tired': { border: 'rgba(75, 192, 192, 1)', background: 'rgba(75, 192, 192, 0.2)' },
+        'Anxious': { border: 'rgba(255, 159, 64, 1)', background: 'rgba(255, 159, 64, 0.2)' },
+        'Sad': { border: 'rgba(255, 99, 132, 1)', background: 'rgba(255, 99, 132, 0.2)' },
+        'Angry': { border: 'rgba(201, 203, 207, 1)', background: 'rgba(201, 203, 207, 0.2)' }
+    };
+
+    // Sort moods by date
+    moods.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Prepare data for the chart
+    const moodData = {
+        labels: moods.map(log => formatDateForDisplay(log.date)),
+        datasets: Object.keys(moodColors).map(mood => ({
+            label: mood,
+            data: moods.map(log => log.mood === mood ? 1 : 0),
+            borderColor: moodColors[mood].border,
+            backgroundColor: moodColors[mood].background,
+            fill: false,
+            tension: 0.4
+        }))
+    };
+
+    // Create new chart instance and store it globally
+    window.moodChart = new Chart(ctx, {
+        type: 'line',
+        data: moodData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false // Hide the legend
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1.2,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function (value) {
+                            if (value === 0 || value === 1) {
+                                return value;
+                            }
+                            return '';
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            afterDraw: function (chart) {
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+                    if (meta.data.length > 0) {
+                        const lastPoint = meta.data[meta.data.length - 1];
+                        const emoji = getMoodEmoji(dataset.label);
+                        ctx.fillStyle = dataset.borderColor;
+                        ctx.font = '25px Arial';
+                        ctx.fillText(emoji, lastPoint.x + 10, lastPoint.y);
+                    }
+                });
+            }
+        }]
+    });
+}
+
+// Load all views
+function loadViews() {
+    loadTimeline();
+    loadWeekView();
+    loadMonthView();
+    renderCalendar(currentDate);
+}
+
+// Theme toggle event listener
+themeToggle.addEventListener('click', toggleTheme);
 
 // Calendar navigation
 prevMonthBtn.addEventListener('click', () => {
@@ -455,146 +587,11 @@ nextMonthBtn.addEventListener('click', () => {
     renderCalendar(currentDate);
 });
 
-// Statistics View
-function loadMoodStats() {
-    moodStats.innerHTML = '';
-    const moods = JSON.parse(localStorage.getItem('moods')) || [];
-
-    if (moods.length === 0) {
-        moodStats.innerHTML = "<p>No moods logged yet!</p>";
-        return;
-    }
-
-    // Count moods
-    const moodCounts = {};
-    moods.forEach(log => {
-        moodCounts[log.mood] = (moodCounts[log.mood] || 0) + 1;
-    });
-
-    // Sort mood counts by frequency (descending)
-    const sortedMoods = Object.keys(moodCounts).sort((a, b) => moodCounts[b] - moodCounts[a]);
-
-    // Create stat elements
-    sortedMoods.forEach(mood => {
-        const moodStat = document.createElement('div');
-        moodStat.classList.add('mood-stat');
-        moodStat.innerHTML = `
-                <div class="emoji">${getMoodEmoji(mood)}</div>
-                <div class="name">${mood}</div>
-                <div class="count">${moodCounts[mood]}</div>
-            `;
-        moodStats.appendChild(moodStat);
-    });
-
-    // Add total count
-    const totalStat = document.createElement('div');
-    totalStat.classList.add('mood-stat', 'total');
-    totalStat.innerHTML = `
-            <div class="emoji">📊</div>
-            <div class="name">Total</div>
-            <div class="count">${moods.length}</div>
-        `;
-    moodStats.appendChild(totalStat);
-}
-
-// Helper function to get week data
-function getWeekData(moods) {
-    const weekData = {};
-
-    moods.forEach(log => {
-        const date = new Date(log.date);
-        // Get the first day of the week (Sunday)
-        const firstDayOfWeek = new Date(date);
-        firstDayOfWeek.setDate(date.getDate() - date.getDay());
-
-        const weekKey = formatDate(firstDayOfWeek);
-
-        if (!weekData[weekKey]) {
-            weekData[weekKey] = [];
-        }
-
-        weekData[weekKey].push(log);
-    });
-
-    return weekData;
-}
-
-// Helper function to get month data
-function getMonthData(moods) {
-    const monthData = {};
-
-    moods.forEach(log => {
-        const date = new Date(log.date);
-        const monthYear = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
-
-        if (!monthData[monthYear]) {
-            monthData[monthYear] = [];
-        }
-
-        monthData[monthYear].push(log);
-    });
-
-    return monthData;
-}
-
-// Helper function to count moods
-function getMoodCounts(logs) {
-    const counts = {};
-
-    logs.forEach(log => {
-        counts[log.mood] = (counts[log.mood] || 0) + 1;
-    });
-
-    return counts;
-}
-
-// Theme toggle event listener
-themeToggle.addEventListener('click', toggleTheme);
-
 // Initialize theme
 initTheme();
 
 // Initial load
 loadViews();
 
-document.addEventListener('DOMContentLoaded', function() {
-  const ctx = document.getElementById('moodChart').getContext('2d');
-  const moodChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Happy', 'Excited', 'Content', 'Neutral', 'Tired', 'Anxious', 'Sad', 'Angry'],
-      datasets: [{
-        label: 'Mood Frequency',
-        data: [12, 19, 3, 5, 2, 3, 7, 8], // Example data
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(201, 203, 207, 0.2)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(201, 203, 207, 1)'
-        ],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
-  });
-});
+//Initial Chart
+renderChart();
